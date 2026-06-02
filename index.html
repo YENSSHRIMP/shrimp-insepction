@@ -379,15 +379,16 @@ function dataURLtoBuffer(dataURL){
   for(let i=0;i<b.length;i++)buf[i]=b.charCodeAt(i);return buf.buffer;
 }
 
+// ─── 從這裡開始貼上，覆蓋原本舊的 doExport ───
 async function doExport(withPhotos){
+  document.getElementById('export-modal').style.display='flex';
   document.getElementById('prog-wrap').style.display='block';
   setProgress(3,'初始化...');
-  await new Promise(r=>setTimeout(r,30));
+  await new Promise(r=>setTimeout(r,150));
 
   const wb=new ExcelJS.Workbook();
   wb.creator='白蝦驗貨表';wb.created=new Date();
 
-  // ── colour helpers ──
   const BLU='FF185FA5',BLU2='FFD6E4F7',GRY='FFF2F2F2',WHT='FFFFFFFF';
   function hFill(c){return{type:'pattern',pattern:'solid',fgColor:{argb:c}};}
   function bdr(){const s={style:'thin',color:{argb:'FFB0B0B0'}};return{top:s,bottom:s,left:s,right:s};}
@@ -399,24 +400,22 @@ async function doExport(withPhotos){
     cell.border=bdr();
   }
 
-  const catPhotoLabels=['包材/盒子外觀','冷凍狀態白蝦','測重畫面','解凍後白蝦','水煮後/試吃後'];
-  const pCatKeys=['pkg','frozen','weight','thawed','cooked'];
-
   const totalBatches=batches.length;
-  let step=0;
-  const totalSteps=totalBatches*(withPhotos?7:2);
-  function tick(msg){step++;setProgress(Math.round(step/totalSteps*92)+3,msg);}
+  const totalSteps=totalBatches * (withPhotos ? 6 : 1);
+  let currentStep=0;
 
   for(let bi=0;bi<totalBatches;bi++){
     const dd=batches[bi].data;
     const c=dd.type==='cooked';
     const bLabel='批次'+(bi+1)+(dd.brand?'_'+dd.brand.slice(0,6):'');
-    tick('批次'+(bi+1)+' 資料表...');
+    
+    currentStep++;
+    setProgress(Math.round((currentStep/totalSteps)*90), `正在處理：批次 ${bi+1} 文字資料...`);
+    await new Promise(r=>setTimeout(r,50)); 
 
-    // ── DATA SHEET (horizontal) ──
+    // ── DATA SHEET ──
     const ws=wb.addWorksheet(bLabel+'_資料',{views:[{showGridLines:true}]});
     ws.properties.defaultRowHeight=22;
-
     const wi=parseFloat(dd.w_withice)||0,net=parseFloat(dd.w_net)||0,lab=parseFloat(dd.w_labeled)||0;
     const icew=wi>0&&net>0?(wi-net).toFixed(1):'';
     const icePct=wi>0&&net>0?((wi-net)/wi*100).toFixed(1)+'%':'';
@@ -424,121 +423,22 @@ async function doExport(withPhotos){
     const bs=(dd.ratio_big||[]).reduce((a,b)=>a+(parseFloat(b)||0),0);
     const ss2=(dd.ratio_small||[]).reduce((a,b)=>a+(parseFloat(b)||0),0);
     const ratio=ss2>0?(bs/ss2).toFixed(2):'';
-
-    // Define column groups & subfields
-    // Format: [groupName, [[fieldLabel, value], ...]]
-    const frozenColorCols=c
-      ?[['冷凍色度(20-34)',dd.frozen_color_val||27],['色度說明',dd.frozen_color_note||'']]
-      :[['顏色',getCkList(dd,['color_blue','color_green','color_brown','color_yellow'])],['主色說明',dd.frozen_color_note||'']];
-    const thawedColorCols=c
-      ?[['解凍色度(20-34)',dd.thawed_color_val||27],['色度說明',dd.thawed_color_note||'']]
-      :[['顏色',getCkList(dd,['th_color_blue','th_color_green','th_color_brown','th_color_yellow'])],['主色說明',dd.thawed_color_note||'']];
+    const frozenColorCols=c?[['冷凍色度(20-34)',dd.frozen_color_val||27],['色度說明',dd.frozen_color_note||'']]:[['顏色',getCkList(dd,['color_blue','color_green','color_brown','color_yellow'])],['主色說明',dd.frozen_color_note||'']];
+    const thawedColorCols=c?[['解凍色度(20-34)',dd.thawed_color_val||27],['色度說明',dd.thawed_color_note||'']]:[['顏色',getCkList(dd,['th_color_blue','th_color_green','th_color_brown','th_color_yellow'])],['主色說明',dd.thawed_color_note||'']];
     const tasteLabel=c?'試吃':'水煮試吃';
     const cookedColorCols=c?[]:[['水煮色度(20-34)',dd.cooked_color_val||27],['色度說明',dd.cooked_color_note||'']];
-
-    const groups=[
-      ['白蝦檢驗報告',[
-        ['批次',bi+1],['蝦種',c?'熟白蝦':'生白蝦'],['品牌',dd.brand],['採購單號',dd.po],
-        ['規格',dd.spec],['檢驗日期',dd.date],['驗貨人員',dd.inspector],['驗貨結果',dd.result],
-      ]],
-      ['包材確認',[
-        ['材質',dd.pkg_material],['印刷',dd.pkg_print],['顏色一致性',dd.pkg_color],
-        ['防水層',dd.pkg_waterproof],
-        ['標籤確認',getCkList(dd,['label_content','label_format','label_fontsize','label_law'])],
-        ['標籤備註',dd.label_note||''],
-      ]],
-      ['冷凍狀態觀測',[
-        ['包冰狀態',dd.ice],['冷凍大小',dd.frozen_size],
-        ...frozenColorCols,
-        ['氣味',getCkList(dd,['smell_none','smell_sea','smell_fishy','smell_ink'])],
-        ['異常狀況',getCkList(dd,['defect_frostbite','defect_blackhead','defect_redhead','defect_blackleg','defect_wsd'])],
-        ['冷凍備註',dd.frozen_note||''],
-      ]],
-      ['測重(g)',[
-        ['毛重(含包材)',parseFloat(dd.w_gross)||''],['含冰重(去包材)',wi||''],
-        ['包材重',parseFloat(dd.w_pkg)||''],['淨重(解凍後)',net||''],
-        ['標示淨重',lab||''],['冰衣重量',icew],['冰衣比例',icePct],['淨重達成率',netRate],
-      ]],
-      ['解凍後觀測',[
-        ...thawedColorCols,
-        ['氣味',getCkList(dd,['th_smell_none','th_smell_sea','th_smell_fishy','th_smell_ink'])],
-        ['異常狀況',getCkList(dd,['th_defect_frostbite','th_defect_blackhead','th_defect_redhead','th_defect_blackleg','th_defect_wsd'])],
-        ['排列方式',dd.arrange||''],['解凍備註',dd.thawed_note||''],
-      ]],
-      ['參差比',[
-        ['測量組合',dd.ratio_group],
-        ['大規格重量',(dd.ratio_big||[]).filter(Boolean).join('、')||''],
-        ['小規格重量',(dd.ratio_small||[]).filter(Boolean).join('、')||''],
-        ['大規格總和',bs>0?bs.toFixed(1)+'g':''],['小規格總和',ss2>0?ss2.toFixed(1)+'g':''],
-        ['參差比',ratio],['合格標準','≤1.2'],['判定',ratio?(parseFloat(ratio)<=1.2?'合格':'不合格'):''],
-      ]],
-      [tasteLabel,[
-        ...cookedColorCols,
-        ['試吃氣味',dd.taste_smell],['甜度(1-5)',dd.taste_sweet||3],
-        ['蝦味道(1-5)',dd.taste_shrimp_flavor||3],['咬感(1-5)',dd.taste_texture_score||3],
-        ['腸種類',getCkList(dd,['vein_shrimp','vein_sand'])],['腸嚴重度',dd.vein_level||'無'],
-        ['試吃備註',dd.taste_note||''],
-      ]],
-      ['整體',[
-        ['驗貨結果',dd.result],['整體備註',dd.remark||''],['匯出時間',new Date().toLocaleString('zh-TW')],
-      ]],
-    ];
-
-    // Build header row 1 (group names) and row 2 (field names), then row 3 (data)
-    // Flatten to columns
-    const row1=[];// group name cells (will merge)
-    const row2=[];// field name cells
-    const row3=[];// data cells
-    const mergeRanges=[];// [{start,end}] col indices (1-based)
-    let col=1;
-    for(const[gName,fields] of groups){
-      const start=col;
-      for(const[fName,fVal] of fields){
-        row1.push(gName);
-        row2.push(fName);
-        row3.push(fVal);
-        col++;
-      }
-      const end=col-1;
-      if(end>start)mergeRanges.push({start,end});
-    }
-
-    // Set column widths
+    const groups=[['白蝦檢驗報告',[['批次',bi+1],['蝦種',c?'熟白蝦':'生白蝦'],['品牌',dd.brand],['採購單號',dd.po],['規格',dd.spec],['檢驗日期',dd.date],['驗貨人員',dd.inspector],['驗貨結果',dd.result]]],['包材確認',[['材質',dd.pkg_material],['印刷',dd.pkg_print],['顏色一致性',dd.pkg_color],['防水層',dd.pkg_waterproof],['標籤確認',getCkList(dd,['label_content','label_format','label_fontsize','label_law'])],['標籤備註',dd.label_note||'']]],['冷凍狀態觀測',[['包冰狀態',dd.ice],['冷凍大小',dd.frozen_size],...frozenColorCols,['氣味',getCkList(dd,['smell_none','smell_sea','smell_fishy','smell_ink'])],['異常狀況',getCkList(dd,['defect_frostbite','defect_blackhead','defect_redhead','defect_blackleg','defect_wsd'])],['冷凍備註',dd.frozen_note||'']]],['測重(g)',[['毛重(含包材)',parseFloat(dd.w_gross)||''],['含冰重(去包材)',wi||''],['包材重',parseFloat(dd.w_pkg)||''],['淨重(解凍後)',net||''],['標示淨重',lab||''],['冰衣重量',icew],['冰衣比例',icePct],['淨重達成率',netRate]]],['解凍後觀測',[...thawedColorCols,['氣味',getCkList(dd,['th_smell_none','th_smell_sea','th_smell_fishy','th_smell_ink'])],['異常狀況',getCkList(dd,['th_defect_frostbite','th_defect_blackhead','th_defect_redhead','th_defect_blackleg','th_defect_wsd'])],['排列方式',dd.arrange||''],['解凍備註',dd.thawed_note||'']]],['參差比',[['測量組合',dd.ratio_group],['大規格重量',(dd.ratio_big||[]).filter(Boolean).join('、')||''],['小規格重量',(dd.ratio_small||[]).filter(Boolean).join('、')||''],['大規格總和',bs>0?bs.toFixed(1)+'g':''],['小規格總和',ss2>0?ss2.toFixed(1)+'g':''],['參差比',ratio],['合格標準','≤1.2'],['判定',ratio?(parseFloat(ratio)<=1.2?'合格':'不合格'):'']]],[tasteLabel,[...cookedColorCols,['試吃氣味',dd.taste_smell],['甜度(1-5)',dd.taste_sweet||3],['蝦味道(1-5)',dd.taste_shrimp_flavor||3],['咬感(1-5)',dd.taste_texture_score||3],['腸種類',getCkList(dd,['vein_shrimp','vein_sand'])],['腸嚴重度',dd.vein_level||'無'],['試吃備註',dd.taste_note||'']]],['整體',[['驗貨結果',dd.result],['整體備註',dd.remark||''],['匯出時間',new Date().toLocaleString('zh-TW')]]]];
+    const row1=[];const row2=[];const row3=[];const mergeRanges=[];let col=1;
+    for(const[gName,fields] of groups){const start=col;for(const[fName,fVal] of fields){row1.push(gName);row2.push(fName);row3.push(fVal);col++;}const end=col-1;if(end>start)mergeRanges.push({start,end});}
     row2.forEach((_,i)=>{ws.getColumn(i+1).width=16;});
+    const r1=ws.getRow(1);r1.height=28;row1.forEach((v,i)=>{applyCell(r1.getCell(i+1),v,{bold:true,fill:BLU,fgColor:WHT,sz:11,center:true});});
+    mergeRanges.forEach(({start,end})=>{try{ws.mergeCells(1,start,1,end);}catch(e){}applyCell(r1.getCell(start),row1[start-1],{bold:true,fill:BLU,fgColor:WHT,sz:11,center:true});});
+    const r2=ws.getRow(2);r2.height=22;row2.forEach((v,i)=>{applyCell(r2.getCell(i+1),v,{bold:true,fill:GRY,sz:10,center:true});});
+    const r3=ws.getRow(3);r3.height=22;row3.forEach((v,i)=>{applyCell(r3.getCell(i+1),v,{center:true});});
+    const resultIdx=row2.indexOf('驗貨結果');if(resultIdx>=0){const rv=row3[resultIdx];const fillC=rv==='合格'?'FF3B6D11':rv==='不合格'?'FFA32D2D':'FFBF8600';r3.getCell(resultIdx+1).fill=hFill(fillC);r3.getCell(resultIdx+1).font={bold:true,color:{argb:WHT},size:10};}
+    const ratioIdx=row2.indexOf('判定');if(ratioIdx>=0&&row3[ratioIdx]){const rv=row3[ratioIdx];r3.getCell(ratioIdx+1).fill=hFill(rv==='合格'?'FF3B6D11':'FFA32D2D');r3.getCell(ratioIdx+1).font={bold:true,color:{argb:WHT},size:10};}
 
-    // Row 1: group headers
-    const r1=ws.getRow(1);r1.height=28;
-    row1.forEach((v,i)=>{applyCell(r1.getCell(i+1),v,{bold:true,fill:BLU,fgColor:WHT,sz:11,center:true});});
-    mergeRanges.forEach(({start,end})=>{
-      try{ws.mergeCells(1,start,1,end);}catch(e){}
-      applyCell(r1.getCell(start),row1[start-1],{bold:true,fill:BLU,fgColor:WHT,sz:11,center:true});
-    });
-
-    // Row 2: field names
-    const r2=ws.getRow(2);r2.height=22;
-    row2.forEach((v,i)=>{applyCell(r2.getCell(i+1),v,{bold:true,fill:GRY,sz:10,center:true});});
-
-    // Row 3: data
-    const r3=ws.getRow(3);r3.height=22;
-    row3.forEach((v,i)=>{applyCell(r3.getCell(i+1),v,{center:true});});
-
-    // Highlight result cell
-    const resultIdx=row2.indexOf('驗貨結果');
-    if(resultIdx>=0){
-      const rv=row3[resultIdx];
-      const fillC=rv==='合格'?'FF3B6D11':rv==='不合格'?'FFA32D2D':'FFBF8600';
-      r3.getCell(resultIdx+1).fill=hFill(fillC);
-      r3.getCell(resultIdx+1).font={bold:true,color:{argb:WHT},size:10};
-    }
-    // Highlight ratio result
-    const ratioIdx=row2.indexOf('判定');
-    if(ratioIdx>=0&&row3[ratioIdx]){
-      const rv=row3[ratioIdx];
-      r3.getCell(ratioIdx+1).fill=hFill(rv==='合格'?'FF3B6D11':'FFA32D2D');
-      r3.getCell(ratioIdx+1).font={bold:true,color:{argb:WHT},size:10};
-    }
-
-    if(!withPhotos){tick('批次'+(bi+1)+' 完成');continue;}
+    if(!withPhotos) continue;
 
     // ── PHOTO SHEETS ──
     const photoCatDefs=c
@@ -546,20 +446,19 @@ async function doExport(withPhotos){
       :[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
 
     for(const[catKey,catLabel] of photoCatDefs){
-      tick('批次'+(bi+1)+' 照片：'+catLabel);
+      currentStep++;
+      setProgress(Math.round((currentStep/totalSteps)*90), `批次 ${bi+1} 匯入：${catLabel}...`);
+      await new Promise(r=>setTimeout(r,80)); 
+
       const sheetName=(bLabel+'_'+catLabel).slice(0,31);
       const pws=wb.addWorksheet(sheetName);
       pws.views=[{showGridLines:false}];
 
-      // Header
-      pws.getColumn(1).width=3;
-      pws.getColumn(2).width=32;
-      pws.getColumn(3).width=3;
-      pws.getColumn(4).width=32;
+      pws.getColumn(1).width=3;  pws.getColumn(2).width=32;
+      pws.getColumn(3).width=3;  pws.getColumn(4).width=32;
 
       const hRow=pws.addRow(['',bLabel+' ▶ '+catLabel]);
       hRow.height=26;
-      hRow.getCell(2).value=bLabel+' ▶ '+catLabel;
       hRow.getCell(2).font={bold:true,size:13};
       hRow.getCell(2).fill=hFill(BLU2);
       try{pws.mergeCells(1,2,1,4);}catch(e){}
@@ -570,25 +469,24 @@ async function doExport(withPhotos){
         const nr=pws.addRow(['','（本步驟未上傳照片）']);
         nr.getCell(2).font={italic:true,color:{argb:'FF888888'}};
       }else{
-        const IMG_PX=240;// display size in Excel (pixels)
-        const ROW_H=Math.ceil(IMG_PX*0.76);// approx EMU to row height pts
+        const IMG_PX=240;
+        const ROW_H=Math.ceil(IMG_PX*0.76);
         let rowCursor=3;
+        
         for(let pi=0;pi<photos.length;pi+=2){
-          // label row
-          const lr=pws.addRow(['','照片 '+(pi+1)+(photos[pi+1]!==undefined?'':''),'','照片 '+(pi+1+1<=photos.length?pi+2:'')]);
+          const lr=pws.addRow(['','照片 '+(pi+1),'','（並排照片）']);
           lr.getCell(2).font={size:9,color:{argb:'FF555555'}};
-          if(photos[pi+1]!==undefined)lr.getCell(4).font={size:9,color:{argb:'FF555555'}};
+          if(photos[pi+1]!==undefined) lr.getCell(4).font={size:9,color:{argb:'FF555555'}};
+          
           rowCursor++;
           pws.getRow(rowCursor).height=ROW_H;
 
-          // resize and embed left photo
           try{
             const buf=dataURLtoBuffer(photos[pi]);
             const imgId=wb.addImage({buffer:buf,extension:'jpeg'});
             pws.addImage(imgId,{tl:{col:1,row:rowCursor-1},br:{col:2,row:rowCursor},editAs:'oneCell'});
           }catch(e){}
 
-          // resize and embed right photo
           if(photos[pi+1]!==undefined){
             try{
               const buf2=dataURLtoBuffer(photos[pi+1]);
@@ -599,28 +497,36 @@ async function doExport(withPhotos){
 
           pws.addRow([]);
           rowCursor+=2;
-          await new Promise(r=>setTimeout(r,10));
+          await new Promise(r=>setTimeout(r,50)); // 每張照片處理完都釋放手機記憶體
         }
       }
     }
-    tick('批次'+(bi+1)+' 完成');
   }
 
-  setProgress(97,'產生檔案...');
-  await new Promise(r=>setTimeout(r,50));
-  const buf=await wb.xlsx.writeBuffer();
-  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;
-  a.download='白蝦驗貨_'+new Date().toISOString().slice(0,10)+'.xlsx';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  setProgress(100,'✅ 完成！');
+  setProgress(93,'正在打包 Excel 檔案...');
+  await new Promise(r=>setTimeout(r,100));
+  
+  try {
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    a.download='白蝦驗貨_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setProgress(100,'✅ 匯出成功！');
+  } catch(err) {
+    setProgress(100,'❌ 發生錯誤，請重試');
+    alert('Excel 打包失敗：記憶體不足或照片過大。建議減少照片或嘗試不含照片匯出。');
+  }
+
   setTimeout(()=>{
     document.getElementById('export-modal').style.display='none';
     document.getElementById('prog-wrap').style.display='none';
     document.getElementById('prog-bar').style.width='0%';
   },1800);
+}
+// ─── 到這裡結束，緊接著應該會看到 function doDeleteBatch(bi){ ───
 }
 
 (function(){
