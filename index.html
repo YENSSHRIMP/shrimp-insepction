@@ -329,11 +329,11 @@ function renderPhotos(){
     inp.onchange=e=>{const f=e.target.files[0];if(!f)return;
       // Resize before storing
       const img=new Image();img.onload=()=>{
-        const MAX=800;let w=img.width,h=img.height;
+        const MAX=400;let w=img.width,h=img.height;
         if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
         const cv=document.createElement('canvas');cv.width=w;cv.height=h;
         cv.getContext('2d').drawImage(img,0,0,w,h);
-        const resized=cv.toDataURL('image/jpeg',0.75);
+        const resized=cv.toDataURL('image/jpeg',0.5);
         dd.photos[cat].push(resized);markDirty();renderPhotos();
       };img.src=URL.createObjectURL(f);
     };
@@ -583,8 +583,7 @@ async function doExport(withPhotos){
 
           // resize and embed left photo
           try{
-            const resized=await resizeDataURL(photos[pi],600,0.72);
-            const buf=dataURLtoBuffer(resized);
+            const buf=dataURLtoBuffer(photos[pi]);
             const imgId=wb.addImage({buffer:buf,extension:'jpeg'});
             pws.addImage(imgId,{tl:{col:1,row:rowCursor-1},br:{col:2,row:rowCursor},editAs:'oneCell'});
           }catch(e){}
@@ -592,8 +591,7 @@ async function doExport(withPhotos){
           // resize and embed right photo
           if(photos[pi+1]!==undefined){
             try{
-              const resized2=await resizeDataURL(photos[pi+1],600,0.72);
-              const buf2=dataURLtoBuffer(resized2);
+              const buf2=dataURLtoBuffer(photos[pi+1]);
               const imgId2=wb.addImage({buffer:buf2,extension:'jpeg'});
               pws.addImage(imgId2,{tl:{col:3,row:rowCursor-1},br:{col:4,row:rowCursor},editAs:'oneCell'});
             }catch(e){}
