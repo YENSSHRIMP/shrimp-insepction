@@ -381,7 +381,6 @@ function dataURLtoBuffer(dataURL){
 
 // ─── 從這裡開始貼上，覆蓋原本舊的 doExport ───
 async function doExport(withPhotos){
- async function doExport(withPhotos){
   document.getElementById('export-modal').style.display='flex';
   document.getElementById('prog-wrap').style.display='block';
   setProgress(3,'初始化...');
@@ -546,6 +545,22 @@ function dataURLtoBuffer(dataURL){
   }
   return ab;
 }
+
+// ─── 以下是之前不小心被刪掉的系統基礎功能，我幫你補回來了 ───
+function showView(viewId){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+viewId).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function setProgress(pct,txt){
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-text').innerText=txt;
+}
+
+// 初始化執行
+loadData();
+renderBatches();
 </script>
 </body>
 </html>
