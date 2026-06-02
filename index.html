@@ -381,6 +381,7 @@ function dataURLtoBuffer(dataURL){
 
 // ─── 從這裡開始貼上，覆蓋原本舊的 doExport ───
 async function doExport(withPhotos){
+ async function doExport(withPhotos){
   document.getElementById('export-modal').style.display='flex';
   document.getElementById('prog-wrap').style.display='block';
   setProgress(3,'初始化...');
@@ -481,14 +482,14 @@ async function doExport(withPhotos){
           rowCursor++;
           pws.getRow(rowCursor).height=ROW_H;
 
-          try{
+          try {
             const buf=dataURLtoBuffer(photos[pi]);
             const imgId=wb.addImage({buffer:buf,extension:'jpeg'});
             pws.addImage(imgId,{tl:{col:1,row:rowCursor-1},br:{col:2,row:rowCursor},editAs:'oneCell'});
           }catch(e){}
 
           if(photos[pi+1]!==undefined){
-            try{
+            try {
               const buf2=dataURLtoBuffer(photos[pi+1]);
               const imgId2=wb.addImage({buffer:buf2,extension:'jpeg'});
               pws.addImage(imgId2,{tl:{col:3,row:rowCursor-1},br:{col:4,row:rowCursor},editAs:'oneCell'});
@@ -497,7 +498,7 @@ async function doExport(withPhotos){
 
           pws.addRow([]);
           rowCursor+=2;
-          await new Promise(r=>setTimeout(r,50)); // 每張照片處理完都釋放手機記憶體
+          await new Promise(r=>setTimeout(r,50)); 
         }
       }
     }
@@ -526,15 +527,25 @@ async function doExport(withPhotos){
     document.getElementById('prog-bar').style.width='0%';
   },1800);
 }
-// ─── 到這裡結束，緊接著應該會看到 function doDeleteBatch(bi){ ───
+
+function doDeleteBatch(bi){
+  if(!confirm('確定要刪除此批次所有資料嗎？'))return;
+  batches.splice(bi,1);
+  saveData();
+  renderBatches();
+  showView('list');
 }
 
-(function(){
-  batches=[{id:0,data:mkData()}];
-  const hasSaved=tryLoadSaved();
-  if(!hasSaved){rebuildBatchSelect();renderAll();}
-  else{rebuildBatchSelect();renderAll();}
-})();
+function dataURLtoBuffer(dataURL){
+  const parts=dataURL.split(',');
+  const byteString=atob(parts[1]);
+  const ab=new ArrayBuffer(byteString.length);
+  const ia=new Uint8Array(ab);
+  for(let i=0;i<byteString.length;i++){
+    ia[i]=byteString.charCodeAt(i);
+  }
+  return ab;
+}
 </script>
 </body>
 </html>
