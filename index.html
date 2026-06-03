@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="白蝦驗貨">
+<meta name="theme-color" content="#185FA5">
+<title>白蝦驗貨表</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --blue:#185FA5;--blue-l:#E6F1FB;--blue-m:#378ADD;
+  --amber:#854F0B;--amber-l:#FAEEDA;
+  --green:#3B6D11;--green-l:#EAF3DE;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --border:#dedad2;--bg:#f5f3ee;--card:#fff;
+  --text:#1a1a1a;--muted:#6b6860;
+  --r:12px;--rs:8px
+}
+body{font-family:-apple-system,'Hiragino Sans','PingFang TC',sans-serif;background:var(--bg);color:var(--text);padding-bottom:80px}
+/* topbar */
+.topbar{background:#fff;border-bottom:.5px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:8px}
+.title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px}
+.sub{font-size:11px;color:var(--muted);margin-top:1px}
+.tbadge{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.tbadge.raw{background:var(--blue-l);color:#0C447C;border:.5px solid #85B7EB}
+.tbadge.ckd{background:var(--amber-l);color:var(--amber);border:.5px solid #EF9F27}
+/* save pill */
+.spill{display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:500;border:.5px solid;cursor:pointer;flex-shrink:0}
+.spill.ok{background:var(--green-l);color:var(--green);border-color:#97C459}
+.spill.dirty{background:var(--amber-l);color:var(--amber);border-color:#EF9F27}
+.spill.busy{background:var(--blue-l);color:var(--blue);border-color:#85B7EB}
+/* batch bar */
+.brow{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#eeebe5;border-bottom:.5px solid var(--border)}
+.brow select{flex:1;font-size:13px;padding:6px 8px;border-radius:var(--rs);border:.5px solid var(--border);background:#fff;color:var(--text)}
+.brow button{padding:6px 12px;border-radius:var(--rs);border:.5px solid var(--border);background:#fff;font-size:12px;color:var(--text);cursor:pointer;white-space:nowrap;font-family:inherit}
+.brow .danger{color:var(--red);border-color:#F09595}
+/* tabs */
+.tabs{display:flex;background:#fff;border-bottom:.5px solid var(--border);overflow-x:auto;padding:0 8px;gap:2px;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 12px;font-size:12px;color:var(--muted);border:none;background:none;cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;flex-shrink:0;font-family:inherit}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+/* sections */
+.sec{display:none;padding:12px 14px;flex-direction:column;gap:10px}
+.sec.on{display:flex}
+/* card */
+.card{background:var(--card);border-radius:var(--r);border:.5px solid var(--border);padding:14px}
+.ctitle{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em}
+/* fields */
+.field{margin-bottom:12px}.field:last-child{margin-bottom:0}
+.lbl{font-size:13px;color:var(--muted);margin-bottom:5px;display:block}
+.req{color:var(--red)}
+input[type=text],input[type=date],input[type=number],textarea,select{width:100%;padding:9px 12px;border:.5px solid var(--border);border-radius:var(--rs);font-size:14px;background:#fff;color:var(--text);font-family:inherit;-webkit-appearance:none}
+input:focus,textarea:focus{outline:none;border-color:var(--blue-m)}
+textarea{resize:vertical;min-height:56px}
+/* radio groups */
+.rg{display:flex;flex-wrap:wrap;gap:6px}
+.rb{padding:7px 14px;border:.5px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;background:#fff;color:var(--text);font-family:inherit}
+.rb.on{background:var(--blue);border-color:var(--blue);color:#fff}
+/* checkboxes */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ci{display:flex;align-items:center;gap:8px;padding:9px 11px;border:.5px solid var(--border);border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--text);background:#fff}
+.ci input{width:17px;height:17px;accent-color:var(--blue);flex-shrink:0}
+.ci.on{background:var(--blue-l);border-color:var(--blue-m);color:#0C447C;font-weight:500}
+/* weight stats */
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:#f5f3ee;border-radius:var(--rs);padding:10px;text-align:center;border:.5px solid var(--border)}
+.stat .sl{font-size:11px;color:var(--muted);margin-bottom:3px}
+.stat .sv{font-size:18px;font-weight:600;color:var(--text)}
+.stat.hi .sv{color:var(--blue)}
+.pass{color:var(--green)}.fail{color:var(--red)}
+/* sliders */
+.srow{display:flex;align-items:center;gap:10px}
+.srow input[type=range]{flex:1;accent-color:var(--blue);height:4px}
+.sval{font-size:15px;font-weight:600;min-width:28px;text-align:right}
+.slabs{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:3px}
+/* type selector */
+.tsel{display:flex;gap:10px}
+.tc{flex:1;border:1.5px solid var(--border);border-radius:var(--r);padding:16px 10px;text-align:center;cursor:pointer;background:#fff}
+.tc.raw{border-color:var(--blue);background:var(--blue-l)}
+.tc.ckd{border-color:var(--amber);background:var(--amber-l)}
+.tc .tci{font-size:30px;margin-bottom:6px;display:block}
+.tc .tcn{font-size:14px;font-weight:600}
+.tc.raw .tcn{color:var(--blue)}
+.tc.ckd .tcn{color:var(--amber)}
+.tc .tcs{font-size:11px;color:var(--muted);margin-top:3px}
+/* photos */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pslot{border:.5px dashed var(--border);border-radius:var(--rs);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;position:relative;background:#f5f3ee}
+.pslot img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.pslot .pi{font-size:22px;color:var(--muted);z-index:1}
+.pslot .pl{font-size:10px;color:var(--muted);margin-top:3px;z-index:1}
+.delbtn{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;z-index:2;border:none;cursor:pointer;color:#fff;font-size:13px}
+input[type=file]{display:none}
+/* notes */
+.note{font-size:12px;padding:9px 12px;border-radius:var(--rs);border-left:3px solid}
+.note.info{color:#0C447C;background:var(--blue-l);border-color:var(--blue)}
+.note.warn{color:var(--amber);background:var(--amber-l);border-color:#EF9F27}
+/* section header */
+.sh{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.shb{width:22px;height:22px;border-radius:50%;background:var(--blue-l);color:var(--blue);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sht{font-size:14px;font-weight:600}
+.pcount{font-size:11px;color:var(--muted);margin-left:auto;background:#eee;padding:2px 8px;border-radius:20px}
+/* bottom bar */
+.bbar{background:#fff;border-top:.5px solid var(--border);padding:12px 16px;display:flex;gap:8px;position:fixed;bottom:0;left:0;right:0;z-index:100}
+.btnp{flex:1;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btns{flex:1;background:#fff;color:var(--text);border:.5px solid var(--border);border-radius:var(--rs);padding:13px;font-size:14px;cursor:pointer;font-family:inherit}
+/* restore bar */
+.rbar{background:var(--amber-l);color:var(--amber);font-size:13px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:.5px solid #EF9F27}
+.rbar button{background:var(--amber);color:#fff;border:none;border-radius:var(--rs);padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600}
+/* export modal */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end}
+.mbox{background:#fff;border-radius:var(--r) var(--r) 0 0;padding:20px 16px 36px;width:100%;max-width:480px;margin:0 auto}
+.mbox h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.mbox p{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.xopts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.xbtn{padding:13px 14px;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;border:.5px solid var(--border);background:#fff;color:var(--text);text-align:left;display:flex;align-items:center;gap:12px}
+.xbtn.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+.xbtn .xi{font-size:22px;flex-shrink:0}
+.xbtn .xt{font-size:14px;font-weight:600}
+.xbtn .xs{font-size:11px;opacity:.72;margin-top:2px}
+/* progress */
+.pwrap{margin:12px 0 4px}
+.ptrack{background:#eee;border-radius:20px;height:8px;overflow:hidden}
+.pbar{height:8px;border-radius:20px;background:var(--blue);width:0%;transition:width .25s}
+.ptxt{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div id="rbar" class="rbar" style="display:none">
+  <span>📋 偵測到上次未完成的驗貨資料</span>
+  <button onclick="restoreData()">恢復資料</button>
+</div>
+
+<div class="topbar">
+  <div>
+    <div class="title">🦐 白蝦驗貨 <span id="tbadge" class="tbadge raw">生白蝦</span></div>
+    <div class="sub" id="blabel">批次 1 / 共 1 批</div>
+  </div>
+  <div id="spill" class="spill ok" onclick="manualSave()">💾 <span id="stxt">已儲存</span></div>
+</div>
+
+<div class="brow">
+  <select id="bsel" onchange="switchBatch(this.value)"></select>
+  <button onclick="addBatch()">＋ 批次</button>
+  <button class="danger" onclick="clearAll()">🗑 清除</button>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div id="secs"></div>
+
+<div class="bbar">
+  <button class="btns" onclick="prevTab()">← 上一步</button>
+  <button class="btnp" id="btnnext" onclick="nextTab()">下一步 →</button>
+</div>
+
+<!-- Export modal -->
+<div class="mbg" id="xmodal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="mbox">
+    <h3>📊 匯出驗貨報告</h3>
+    <p>橫版格式 Excel，第一行大分類、第二行欄位名。<br>照片各步驟獨立工作表，自動壓縮。</p>
+    <div class="xopts">
+      <button class="xbtn pri" onclick="doExport(true)">
+        <span class="xi">📋</span>
+        <div><div class="xt">完整報告（含照片）</div><div class="xs">照片壓縮後嵌入，各步驟獨立工作表</div></div>
+      </button>
+      <button class="xbtn" onclick="doExport(false)">
+        <span class="xi">📄</span>
+        <div><div class="xt">僅資料（不含照片）</div><div class="xs">速度快，檔案小</div></div>
+      </button>
+    </div>
+    <div id="prog" style="display:none" class="pwrap">
+      <div class="ptrack"><div class="pbar" id="pbar"></div></div>
+      <div class="ptxt" id="ptxt">準備中...</div>
+    </div>
+    <button class="btns" style="width:100%;margin-top:8px" onclick="closeModal()">取消</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<script>
+// ─── STORAGE ───────────────────────────────────────────────────────────────
+const SK='sv4';
+let batches=[],cur=0,curTab=0,saveTimer=null;
+
+function mkData(){
+  return{type:'raw',brand:'',po:'',date:new Date().toISOString().slice(0,10),spec:'',inspector:'',
+  result:'合格',remark:'',
+  pkg_material:'正常',pkg_print:'正常',pkg_color:'一致',pkg_waterproof:'完整',
+  label_content:false,label_format:false,label_fontsize:false,label_law:false,label_note:'',
+  ice:'正常',frozen_size:'正常',frozen_color_val:27,frozen_color_note:'',
+  color_blue:false,color_green:false,color_brown:false,color_yellow:false,
+  smell_none:false,smell_sea:false,smell_fishy:false,smell_ink:false,
+  defect_frostbite:false,defect_blackhead:false,defect_redhead:false,defect_blackleg:false,defect_wsd:false,
+  frozen_note:'',
+  thawed_color_val:27,thawed_color_note:'',
+  th_color_blue:false,th_color_green:false,th_color_brown:false,th_color_yellow:false,
+  th_smell_none:false,th_smell_sea:false,th_smell_fishy:false,th_smell_ink:false,
+  th_defect_frostbite:false,th_defect_blackhead:false,th_defect_redhead:false,th_defect_blackleg:false,th_defect_wsd:false,
+  arrange:'',thawed_note:'',
+  w_gross:'',w_withice:'',w_pkg:'',w_net:'',w_labeled:'',
+  ratio_group:'三大三小',ratio_big:[],ratio_small:[],
+  cooked_color_val:27,cooked_color_note:'',
+  taste_smell:'正常',taste_sweet:3,taste_shrimp_flavor:3,taste_texture_score:3,
+  vein_shrimp:false,vein_sand:false,vein_level:'無',taste_note:'',
+  photos:{pkg:[],frozen:[],weight:[],thawed:[],cooked:[]}};
+}
+
+function d(){return batches[cur].data;}
+function isC(){return d().type==='cooked';}
+function sf(k,v){d()[k]=v;dirty();}
+
+function dirty(){
+  document.getElementById('spill').className='spill dirty';
+  document.getElementById('stxt').textContent='未儲存';
+  clearTimeout(saveTimer);saveTimer=setTimeout(save,1800);
+}
+function save(){
+  try{
+    const slim=batches.map(b=>({...b,data:{...b.data,photos:{pkg:[],frozen:[],weight:[],thawed:[],cooked:[]}}}));
+    localStorage.setItem(SK+'m',JSON.stringify({batches:slim,cur}));
+    batches.forEach((b,i)=>{try{localStorage.setItem(SK+'p'+i,JSON.stringify(b.data.photos));}catch(e){}});
+    document.getElementById('spill').className='spill ok';
+    document.getElementById('stxt').textContent='已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){document.getElementById('stxt').textContent='儲存失敗';}
+}
+function manualSave(){
+  document.getElementById('spill').className='spill busy';
+  document.getElementById('stxt').textContent='儲存中...';
+  setTimeout(save,200);
+}
+function tryLoadSaved(){
+  try{const r=localStorage.getItem(SK+'m');if(!r)return false;
+    const p=JSON.parse(r);if(p&&p.batches&&p.batches.length){document.getElementById('rbar').style.display='flex';return true;}}catch(e){}return false;
+}
+function restoreData(){
+  try{const p=JSON.parse(localStorage.getItem(SK+'m'));
+    batches=p.batches;cur=p.cur||0;
+    batches.forEach((b,i)=>{try{const ph=localStorage.getItem(SK+'p'+i);if(ph)b.data.photos=JSON.parse(ph);}catch(e){b.data.photos={pkg:[],frozen:[],weight:[],thawed:[],cooked:[]};} });
+    document.getElementById('rbar').style.display='none';
+    rebuildBsel();renderAll();}catch(e){alert('無法恢復');}
+}
+function clearAll(){
+  if(!confirm('確定清除所有資料？'))return;
+  try{Object.keys(localStorage).filter(k=>k.startsWith(SK)).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  batches=[{id:0,data:mkData()}];cur=0;curTab=0;rebuildBsel();renderAll();
+}
+
+// ─── UI HELPERS ────────────────────────────────────────────────────────────
+function sr(k,v,el){d()[k]=v;dirty();el.closest('.rg').querySelectorAll('.rb').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function tc(el,k){const cb=el.querySelector('input');el.classList.toggle('on',cb.checked);d()[k]=cb.checked;dirty();}
+function selType(t){if(d().type===t)return;if((d().brand||d().po)&&!confirm('切換類型？'))return;d().type=t;dirty();updateBadge();curTab=0;renderAll();}
+function updateBadge(){const b=document.getElementById('tbadge');b.className='tbadge '+(isC()?'ckd':'raw');b.textContent=isC()?'熟白蝦':'生白蝦';}
+function tabs(){return[{l:'基本'},{l:'包材'},{l:'冷凍'},{l:'測重'},{l:'解凍後'},{l:'參差比'},{l:isC()?'試吃':'水煮試吃'},{l:'照片'}];}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────
+function renderAll(){
+  updateBadge();
+  const T=tabs();
+  document.getElementById('tabs').innerHTML=T.map((t,i)=>`<button class="tab${i===curTab?' on':''}" onclick="gotoTab(${i},this)">${t.l}</button>`).join('');
+  const c=isC();
+  document.getElementById('secs').innerHTML=[
+    secBasic(),secPkg(),secFrozen(c),secWeight(),secThawed(c),secRatio(),secTaste(c),secPhotos(c)
+  ].map((h,i)=>`<div class="sec${i===curTab?' on':''}" id="t${i}">${h}</div>`).join('');
+  loadState();updBtn();
+}
+function gotoTab(i,el){
+  curTab=i;
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('t'+i)?.classList.add('on');
+  if(el)el.classList.add('on');else document.querySelectorAll('.tab')[i]?.classList.add('on');
+  document.querySelectorAll('.tab')[i]?.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});
+  updBtn();loadState();
+}
+function updBtn(){const nb=document.getElementById('btnnext');nb.textContent=curTab===tabs().length-1?'📊 匯出 Excel':'下一步 →';}
+function nextTab(){if(curTab<tabs().length-1)gotoTab(curTab+1);else document.getElementById('xmodal').style.display='flex';}
+function prevTab(){if(curTab>0)gotoTab(curTab-1);}
+function closeModal(){document.getElementById('xmodal').style.display='none';}
+
+// ─── SECTION BUILDERS ──────────────────────────────────────────────────────
+function secBasic(){return`<div class="card"><div class="ctitle">蝦種類型</div><div class="tsel"><div class="tc${!isC()?' raw':''}" id="tcraw" onclick="selType('raw')"><span class="tci">🦐</span><div class="tcn">生白蝦</div><div class="tcs">需水煮試吃</div></div><div class="tc${isC()?' ckd':''}" id="tcckd" onclick="selType('cooked')"><span class="tci">🍤</span><div class="tcn">熟白蝦</div><div class="tcs">直接試吃</div></div></div></div><div class="card"><div class="ctitle">基本資訊</div><div class="field"><label class="lbl">品牌名稱 <span class="req">*</span></label><input type="text" id="fbrand" placeholder="品牌名稱" oninput="sf('brand',this.value)"></div><div class="field"><label class="lbl">採購單號</label><input type="text" id="fpo" placeholder="PO-2024-001" oninput="sf('po',this.value)"></div><div class="field"><label class="lbl">檢驗日期</label><input type="date" id="fdate" oninput="sf('date',this.value)"></div><div class="field"><label class="lbl">規格</label><input type="text" id="fspec" placeholder="21/25、26/30" oninput="sf('spec',this.value)"></div><div class="field"><label class="lbl">驗貨人員</label><input type="text" id="finsp" placeholder="姓名" oninput="sf('inspector',this.value)"></div></div><div class="card"><div class="ctitle">整體結論</div><div class="field"><label class="lbl">驗貨結果</label><div class="rg" id="rgresult"><div class="rb" onclick="sr('result','合格',this)">合格</div><div class="rb" onclick="sr('result','條件接受',this)">條件接受</div><div class="rb" onclick="sr('result','不合格',this)">不合格</div></div></div><div class="field"><label class="lbl">備註</label><textarea id="fremark" placeholder="整體備註..." oninput="sf('remark',this.value)"></textarea></div></div>`;}
+
+function secPkg(){return`<div class="card"><div class="ctitle">包材品質</div><div class="field"><label class="lbl">材質</label><div class="rg" id="rgpkgmat"><div class="rb" onclick="sr('pkg_material','正常',this)">正常</div><div class="rb" onclick="sr('pkg_material','輕微瑕疵',this)">輕微瑕疵</div><div class="rb" onclick="sr('pkg_material','異常',this)">異常</div></div></div><div class="field"><label class="lbl">印刷品質</label><div class="rg" id="rgpkgprt"><div class="rb" onclick="sr('pkg_print','正常',this)">正常</div><div class="rb" onclick="sr('pkg_print','偏色',this)">偏色</div><div class="rb" onclick="sr('pkg_print','模糊',this)">模糊</div><div class="rb" onclick="sr('pkg_print','異常',this)">異常</div></div></div><div class="field"><label class="lbl">顏色一致性</label><div class="rg" id="rgpkgclr"><div class="rb" onclick="sr('pkg_color','一致',this)">一致</div><div class="rb" onclick="sr('pkg_color','輕微差異',this)">輕微差異</div><div class="rb" onclick="sr('pkg_color','差異明顯',this)">差異明顯</div></div></div><div class="field"><label class="lbl">防水層</label><div class="rg" id="rgpkgwp"><div class="rb" onclick="sr('pkg_waterproof','完整',this)">完整</div><div class="rb" onclick="sr('pkg_waterproof','部分缺損',this)">部分缺損</div><div class="rb" onclick="sr('pkg_waterproof','缺損',this)">缺損</div></div></div></div><div class="card"><div class="ctitle">中文標籤</div><div class="cg"><label class="ci" onclick="tc(this,'label_content')"><input type="checkbox">內容正確</label><label class="ci" onclick="tc(this,'label_format')"><input type="checkbox">格式正確</label><label class="ci" onclick="tc(this,'label_fontsize')"><input type="checkbox">字體大小</label><label class="ci" onclick="tc(this,'label_law')"><input type="checkbox">符合法規</label></div><div class="field" style="margin-top:10px"><label class="lbl">標籤備註</label><textarea id="flabelnote" placeholder="標籤問題..." oninput="sf('label_note',this.value)"></textarea></div></div>`;}
+
+function secFrozen(c){
+  const col=c
+    ?`<div class="card"><div class="ctitle">色度（冷凍狀態）</div><div class="srow"><span style="font-size:12px;color:var(--muted)">20</span><input type="range" min="20" max="34" step="1" value="27" id="rfrozclr" oninput="document.getElementById('rvfrozclr').textContent=this.value;sf('frozen_color_val',+this.value)"><span class="sval" id="rvfrozclr">27</span></div><div class="slabs"><span>偏白/淡</span><span>正常橙紅</span><span>深紅</span></div><div class="field" style="margin-top:8px"><label class="lbl">補充說明</label><input type="text" id="ffrozclrnote" placeholder="顏色均勻性..." oninput="sf('frozen_color_note',this.value)"></div></div>`
+    :`<div class="card"><div class="ctitle">顏色（冷凍狀態）</div><div class="cg"><label class="ci" onclick="tc(this,'color_blue')"><input type="checkbox">藍</label><label class="ci" onclick="tc(this,'color_green')"><input type="checkbox">翠綠</label><label class="ci" onclick="tc(this,'color_brown')"><input type="checkbox">咖啡</label><label class="ci" onclick="tc(this,'color_yellow')"><input type="checkbox">黃</label></div><div class="field" style="margin-top:8px"><label class="lbl">主色說明</label><input type="text" id="ffrozclrnote" placeholder="此批次主要顏色" oninput="sf('frozen_color_note',this.value)"></div></div>`;
+  return`<div class="card"><div class="ctitle">包冰狀態</div><div class="rg" id="rgice"><div class="rb" onclick="sr('ice','正常',this)">正常</div><div class="rb" onclick="sr('ice','過濕',this)">過濕</div><div class="rb" onclick="sr('ice','過乾',this)">過乾</div><div class="rb" onclick="sr('ice','不均勻',this)">不均勻</div></div></div>${col}<div class="card"><div class="ctitle">大小（冷凍狀態）</div><div class="rg" id="rgfrozsize"><div class="rb" onclick="sr('frozen_size','正常',this)">正常</div><div class="rb" onclick="sr('frozen_size','偏大',this)">偏大</div><div class="rb" onclick="sr('frozen_size','偏小',this)">偏小</div></div></div><div class="card"><div class="ctitle">氣味（冷凍狀態）</div><div class="cg"><label class="ci" onclick="tc(this,'smell_none')"><input type="checkbox">無味道</label><label class="ci" onclick="tc(this,'smell_sea')"><input type="checkbox">海味</label><label class="ci" onclick="tc(this,'smell_fishy')"><input type="checkbox">腥味</label><label class="ci" onclick="tc(this,'smell_ink')"><input type="checkbox">油墨味</label></div></div><div class="card"><div class="ctitle">異常狀況（冷凍）</div><div class="cg"><label class="ci" onclick="tc(this,'defect_frostbite')"><input type="checkbox">凍傷</label><label class="ci" onclick="tc(this,'defect_blackhead')"><input type="checkbox">黑頭</label><label class="ci" onclick="tc(this,'defect_redhead')"><input type="checkbox">紅頭</label><label class="ci" onclick="tc(this,'defect_blackleg')"><input type="checkbox">黑腳</label><label class="ci" onclick="tc(this,'defect_wsd')"><input type="checkbox">白斑病</label></div><div class="field" style="margin-top:8px"><label class="lbl">備註</label><textarea id="ffroznote" placeholder="其他觀察..." oninput="sf('frozen_note',this.value)"></textarea></div></div>`;}
+
+function secWeight(){return`<div class="note info">請將白蝦泡水約 30 分鐘解凍，勿直接用水沖洗</div><div class="card"><div class="ctitle">重量輸入（公克）</div><div class="wgrid"><div class="field"><label class="lbl">毛重（含包材）</label><input type="number" id="wgross" placeholder="g" inputmode="decimal" oninput="calcW()"></div><div class="field"><label class="lbl">含冰重（去包材）</label><input type="number" id="wwithice" placeholder="g" inputmode="decimal" oninput="calcW()"></div></div><div class="wgrid"><div class="field"><label class="lbl">包材重</label><input type="number" id="wpkg" placeholder="g" inputmode="decimal" oninput="calcW()"></div><div class="field"><label class="lbl">淨重（解凍後）</label><input type="number" id="wnet" placeholder="g" inputmode="decimal" oninput="calcW()"></div></div><div class="field"><label class="lbl">標示淨重（包裝標示）</label><input type="number" id="wlabeled" placeholder="g" inputmode="decimal" oninput="calcW()"></div><div class="wgrid" style="margin-top:12px"><div class="stat"><div class="sl">冰衣重量</div><div class="sv" id="wrice">—</div></div><div class="stat"><div class="sl">冰衣比例</div><div class="sv" id="wricepct">—</div></div><div class="stat hi" style="grid-column:span 2"><div class="sl">淨重達成率</div><div class="sv" id="wrrate">—</div></div></div></div>`;}
+
+function secThawed(c){
+  const col=c
+    ?`<div class="card"><div class="ctitle">色度（解凍後）</div><div class="srow"><span style="font-size:12px;color:var(--muted)">20</span><input type="range" min="20" max="34" step="1" value="27" id="rthwclr" oninput="document.getElementById('rvthwclr').textContent=this.value;sf('thawed_color_val',+this.value)"><span class="sval" id="rvthwclr">27</span></div><div class="slabs"><span>偏白/淡</span><span>正常橙紅</span><span>深紅</span></div><div class="field" style="margin-top:8px"><label class="lbl">補充說明</label><input type="text" id="fthwclrnote" placeholder="顏色均勻性..." oninput="sf('thawed_color_note',this.value)"></div></div>`
+    :`<div class="card"><div class="ctitle">顏色（解凍後）</div><div class="cg"><label class="ci" onclick="tc(this,'th_color_blue')"><input type="checkbox">藍</label><label class="ci" onclick="tc(this,'th_color_green')"><input type="checkbox">翠綠</label><label class="ci" onclick="tc(this,'th_color_brown')"><input type="checkbox">咖啡</label><label class="ci" onclick="tc(this,'th_color_yellow')"><input type="checkbox">黃</label></div><div class="field" style="margin-top:8px"><label class="lbl">主色說明</label><input type="text" id="fthwclrnote" placeholder="解凍後主要顏色" oninput="sf('thawed_color_note',this.value)"></div></div>`;
+  return`${col}<div class="card"><div class="ctitle">氣味（解凍後）</div><div class="cg"><label class="ci" onclick="tc(this,'th_smell_none')"><input type="checkbox">無味道</label><label class="ci" onclick="tc(this,'th_smell_sea')"><input type="checkbox">海味</label><label class="ci" onclick="tc(this,'th_smell_fishy')"><input type="checkbox">腥味</label><label class="ci" onclick="tc(this,'th_smell_ink')"><input type="checkbox">油墨味</label></div></div><div class="card"><div class="ctitle">異常狀況（解凍後）</div><div class="cg"><label class="ci" onclick="tc(this,'th_defect_frostbite')"><input type="checkbox">凍傷</label><label class="ci" onclick="tc(this,'th_defect_blackhead')"><input type="checkbox">黑頭</label><label class="ci" onclick="tc(this,'th_defect_redhead')"><input type="checkbox">紅頭</label><label class="ci" onclick="tc(this,'th_defect_blackleg')"><input type="checkbox">黑腳</label><label class="ci" onclick="tc(this,'th_defect_wsd')"><input type="checkbox">白斑病</label></div><div class="field" style="margin-top:8px"><label class="lbl">排列方式</label><div class="rg" id="rgarrange"><div class="rb" onclick="sr('arrange','依顏色排列',this)">依顏色排列</div><div class="rb" onclick="sr('arrange','依大小排列',this)">依大小排列</div><div class="rb" onclick="sr('arrange','未排列',this)">未排列</div></div></div><div class="field" style="margin-top:8px"><label class="lbl">備註</label><textarea id="fthwnote" placeholder="其他觀察..." oninput="sf('thawed_note',this.value)"></textarea></div></div>`;}
+
+function secRatio(){return`<div class="note info">大規格三大三小，小規格五大五小。合格標準：參差比 ≤ 1.2</div><div class="card"><div class="ctitle">測量組合</div><div class="rg" id="rgratiogrp"><div class="rb" onclick="sr('ratio_group','三大三小',this);setRatioInputs(3)">三大三小（大規格）</div><div class="rb" onclick="sr('ratio_group','五大五小',this);setRatioInputs(5)">五大五小（小規格）</div></div></div><div class="card"><div class="ctitle">輸入重量（公克）</div><div id="rbig"></div><div id="rsmall"></div><div class="wgrid" style="margin-top:12px"><div class="stat"><div class="sl">大規格總和</div><div class="sv" id="rbigsum">—</div></div><div class="stat"><div class="sl">小規格總和</div><div class="sv" id="rsmallsum">—</div></div><div class="stat hi" style="grid-column:span 2"><div class="sl">參差比</div><div class="sv" id="rresult">—</div></div></div></div>`;}
+
+function secTaste(c){
+  const hd=c?`<div class="note warn">熟白蝦直接試吃，無需水煮</div>`:`<div class="note info">大規格水煮 3 分鐘，小規格 2 分 30 秒。多品牌時建議換水</div>`;
+  const cc=c?'':`<div class="card"><div class="ctitle">水煮後色度（20–34）</div><div class="srow"><span style="font-size:12px;color:var(--muted)">20</span><input type="range" min="20" max="34" step="1" value="27" id="rcookedclr" oninput="document.getElementById('rvcookedclr').textContent=this.value;sf('cooked_color_val',+this.value)"><span class="sval" id="rvcookedclr">27</span></div><div class="slabs"><span>偏白/淡</span><span>正常橙紅</span><span>深紅</span></div><div class="field" style="margin-top:8px"><label class="lbl">補充說明</label><input type="text" id="fcookedclrnote" placeholder="顏色均勻..." oninput="sf('cooked_color_note',this.value)"></div></div>`;
+  return`${hd}${cc}<div class="card"><div class="ctitle">試吃評分</div><div class="field"><label class="lbl">氣味</label><div class="rg" id="rgtastesmell"><div class="rb" onclick="sr('taste_smell','正常',this)">正常</div><div class="rb" onclick="sr('taste_smell','輕微腥',this)">輕微腥</div><div class="rb" onclick="sr('taste_smell','腥味重',this)">腥味重</div><div class="rb" onclick="sr('taste_smell','油墨味',this)">油墨味</div></div></div><div class="field"><label class="lbl">甜度（1–5）</label><div class="srow"><span style="font-size:12px;color:var(--muted)">1</span><input type="range" min="1" max="5" value="3" id="rsweet" oninput="document.getElementById('rvsweet').textContent=this.value;sf('taste_sweet',+this.value)"><span class="sval" id="rvsweet">3</span></div><div class="slabs"><span>不甜</span><span>普通</span><span>很甜</span></div></div><div class="field"><label class="lbl">蝦味道（1–5）</label><div class="srow"><span style="font-size:12px;color:var(--muted)">1</span><input type="range" min="1" max="5" value="3" id="rshflav" oninput="document.getElementById('rvshflav').textContent=this.value;sf('taste_shrimp_flavor',+this.value)"><span class="sval" id="rvshflav">3</span></div><div class="slabs"><span>味道淡</span><span>普通</span><span>風味濃</span></div></div><div class="field"><label class="lbl">咬感（1–5）</label><div class="srow"><span style="font-size:12px;color:var(--muted)">1</span><input type="range" min="1" max="5" value="3" id="rtex" oninput="document.getElementById('rvtex').textContent=this.value;sf('taste_texture_score',+this.value)"><span class="sval" id="rvtex">3</span></div><div class="slabs"><span>偏軟</span><span>普通</span><span>Q彈</span></div></div><div class="field"><label class="lbl">蝦腸 / 沙腸</label><div class="cg" style="margin-bottom:8px"><label class="ci" onclick="tc(this,'vein_shrimp')"><input type="checkbox">蝦腸</label><label class="ci" onclick="tc(this,'vein_sand')"><input type="checkbox">沙腸</label></div><div class="rg" id="rgveinlvl"><div class="rb" onclick="sr('vein_level','無',this)">無</div><div class="rb" onclick="sr('vein_level','輕微',this)">輕微</div><div class="rb" onclick="sr('vein_level','明顯',this)">明顯</div></div></div><div class="field"><label class="lbl">試吃備註</label><textarea id="ftastenote" placeholder="口感描述..." oninput="sf('taste_note',this.value)"></textarea></div></div>`;}
+
+function secPhotos(c){
+  const cats=c?[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','試吃後']]:[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
+  return cats.map(([id,lbl],i)=>`<div class="card"><div class="sh"><div class="shb">${i+1}</div><div class="sht">${lbl}</div><div class="pcount" id="pc${id}">0張</div></div><div class="pgrid" id="ph${id}"></div></div>`).join('');
+}
+
+// ─── STATE LOADING ──────────────────────────────────────────────────────────
+function loadState(){
+  const dd=d();
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  sv('fbrand',dd.brand);sv('fpo',dd.po);sv('fdate',dd.date);sv('fspec',dd.spec);
+  sv('finsp',dd.inspector);sv('fremark',dd.remark);sv('flabelnote',dd.label_note);
+  sv('ffroznote',dd.frozen_note);sv('ffrozclrnote',dd.frozen_color_note);
+  sv('fthwnote',dd.thawed_note);sv('fthwclrnote',dd.thawed_color_note);
+  sv('fcookedclrnote',dd.cooked_color_note);sv('ftastenote',dd.taste_note);
+  const ssl=(rid,rvid,val,def)=>{const r=document.getElementById(rid),rv=document.getElementById(rvid);if(r){r.value=val!=null?val:def;if(rv)rv.textContent=val!=null?val:def;}};
+  ssl('rsweet','rvsweet',dd.taste_sweet,3);ssl('rshflav','rvshflav',dd.taste_shrimp_flavor,3);
+  ssl('rtex','rvtex',dd.taste_texture_score,3);
+  ssl('rcookedclr','rvcookedclr',dd.cooked_color_val,27);
+  ssl('rfrozclr','rvfrozclr',dd.frozen_color_val,27);
+  ssl('rthwclr','rvthwclr',dd.thawed_color_val,27);
+  const wk={gross:'wgross',withice:'wwithice',pkg:'wpkg',net:'wnet',labeled:'wlabeled'};
+  for(const[k,id]of Object.entries(wk)){const el=document.getElementById(id);if(el)el.value=dd['w_'+k]||'';}
+  const rm={result:'rgresult',pkg_material:'rgpkgmat',pkg_print:'rgpkgprt',pkg_color:'rgpkgclr',pkg_waterproof:'rgpkgwp',ice:'rgice',frozen_size:'rgfrozsize',arrange:'rgarrange',ratio_group:'rgratiogrp',taste_smell:'rgtastesmell',vein_level:'rgveinlvl'};
+  for(const[k,rgid]of Object.entries(rm)){const rg=document.getElementById(rgid);if(!rg)continue;rg.querySelectorAll('.rb').forEach(b=>b.classList.toggle('on',b.textContent.trim()===dd[k]));}
+  const cks=['label_content','label_format','label_fontsize','label_law','color_blue','color_green','color_brown','color_yellow','smell_none','smell_sea','smell_fishy','smell_ink','defect_frostbite','defect_blackhead','defect_redhead','defect_blackleg','defect_wsd','th_color_blue','th_color_green','th_color_brown','th_color_yellow','th_smell_none','th_smell_sea','th_smell_fishy','th_smell_ink','th_defect_frostbite','th_defect_blackhead','th_defect_redhead','th_defect_blackleg','th_defect_wsd','vein_shrimp','vein_sand'];
+  cks.forEach(k=>{document.querySelectorAll('.ci').forEach(item=>{const oc=item.getAttribute('onclick')||'';if(oc.includes("'"+k+"'")){const cb=item.querySelector('input');if(cb){cb.checked=!!dd[k];item.classList.toggle('on',!!dd[k]);}}});});
+  document.getElementById('tcraw')?.setAttribute('class','tc'+(d().type==='raw'?' raw':''));
+  document.getElementById('tcckd')?.setAttribute('class','tc'+(d().type==='cooked'?' ckd':''));
+  calcW();const n=dd.ratio_group==='五大五小'?5:3;setRatioInputs(n,true);renderPhotos();
+}
+
+// ─── WEIGHT ────────────────────────────────────────────────────────────────
+function calcW(){
+  const g=id=>parseFloat(document.getElementById(id)?.value)||0;
+  const wi=g('wwithice'),net=g('wnet'),lab=g('wlabeled');
+  const icew=wi>0&&net>0?wi-net:null;
+  const el=id=>document.getElementById(id);
+  if(el('wrice'))el('wrice').textContent=icew!=null?icew.toFixed(1)+'g':'—';
+  if(el('wricepct'))el('wricepct').textContent=icew!=null&&wi>0?(icew/wi*100).toFixed(1)+'%':'—';
+  if(el('wrrate')){const rate=lab>0&&net>0?(net/lab*100).toFixed(1)+'%':'—';el('wrrate').textContent=rate;if(net>0&&lab>0)el('wrrate').className='sv '+(net>=lab*0.95?'pass':'fail');}
+  const dd=d();dd.w_gross=g('wgross')||'';dd.w_withice=wi||'';dd.w_pkg=g('wpkg')||'';dd.w_net=net||'';dd.w_labeled=lab||'';dirty();
+}
+
+// ─── RATIO ─────────────────────────────────────────────────────────────────
+function setRatioInputs(n,restore){
+  const dd=d();
+  if(!restore){dd.ratio_big=new Array(n).fill('');dd.ratio_small=new Array(n).fill('');}
+  else{if(!dd.ratio_big||dd.ratio_big.length!==n)dd.ratio_big=new Array(n).fill('');if(!dd.ratio_small||dd.ratio_small.length!==n)dd.ratio_small=new Array(n).fill('');}
+  const cols=Math.min(n,3);
+  const mk=(p,arr)=>arr.map((_,i)=>`<div><label class="lbl" style="text-align:center;font-size:12px">${p}${i+1}</label><input type="number" value="${arr[i]||''}" placeholder="g" inputmode="decimal" style="text-align:center" oninput="updR('${p==='大'?'big':'small'}',${i},this.value)"></div>`).join('');
+  const bi=document.getElementById('rbig'),si=document.getElementById('rsmall');
+  if(bi)bi.innerHTML=`<div class="lbl" style="margin-bottom:6px">大規格（${n}隻）</div><div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px">${mk('大',dd.ratio_big)}</div>`;
+  if(si)si.innerHTML=`<div class="lbl" style="margin-top:10px;margin-bottom:6px">小規格（${n}隻）</div><div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:6px">${mk('小',dd.ratio_small)}</div>`;
+  calcRatio();
+}
+function updR(t,i,v){const dd=d();(t==='big'?dd.ratio_big:dd.ratio_small)[i]=parseFloat(v)||'';calcRatio();dirty();}
+function calcRatio(){
+  const dd=d();
+  const bs=(dd.ratio_big||[]).reduce((a,b)=>a+(parseFloat(b)||0),0);
+  const ss=(dd.ratio_small||[]).reduce((a,b)=>a+(parseFloat(b)||0),0);
+  const ratio=ss>0?(bs/ss).toFixed(2):null;
+  const el=id=>document.getElementById(id);
+  if(el('rbigsum'))el('rbigsum').textContent=bs>0?bs.toFixed(1)+'g':'—';
+  if(el('rsmallsum'))el('rsmallsum').textContent=ss>0?ss.toFixed(1)+'g':'—';
+  if(el('rresult')){el('rresult').textContent=ratio||'—';el('rresult').className='sv'+(ratio?' '+(parseFloat(ratio)<=1.2?'pass':'fail'):'');}
+}
+
+// ─── PHOTOS ────────────────────────────────────────────────────────────────
+// Resize photo at capture time: max 800px, jpeg 0.80
+function resizeOnCapture(file){
+  return new Promise(res=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const MAX=800;let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      res(cv.toDataURL('image/jpeg',0.80));
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);res(null);};
+    img.src=url;
+  });
+}
+
+const pCats=['pkg','frozen','weight','thawed','cooked'];
+function renderPhotos(){
+  const dd=d();if(!dd.photos)dd.photos={};
+  pCats.forEach(cat=>{
+    const cont=document.getElementById('ph'+cat);if(!cont)return;
+    if(!dd.photos[cat])dd.photos[cat]=[];
+    const cnt=document.getElementById('pc'+cat);if(cnt)cnt.textContent=dd.photos[cat].length+'張';
+    cont.innerHTML='';
+    dd.photos[cat].forEach((src,i)=>{
+      if(!src)return;
+      const slot=document.createElement('div');slot.className='pslot';
+      const img=document.createElement('img');img.src=src;slot.appendChild(img);
+      const btn=document.createElement('button');btn.className='delbtn';btn.textContent='✕';
+      btn.onclick=e=>{e.stopPropagation();dd.photos[cat].splice(i,1);dirty();renderPhotos();};
+      slot.appendChild(btn);cont.appendChild(slot);
+    });
+    // add slot
+    const add=document.createElement('div');add.className='pslot';
+    add.innerHTML='<span class="pi">📷</span><span class="pl">拍照</span>';
+    const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.capture='environment';
+    inp.onchange=async e=>{
+      const f=e.target.files[0];if(!f)return;
+      const resized=await resizeOnCapture(f);
+      if(resized){dd.photos[cat].push(resized);dirty();renderPhotos();}
+    };
+    add.appendChild(inp);add.onclick=()=>inp.click();cont.appendChild(add);
+  });
+}
+
+// ─── BATCH ────────────────────────────────────────────────────────────────
+function addBatch(){const id=batches.length;batches.push({id,data:mkData()});cur=id;curTab=0;rebuildBsel();renderAll();dirty();}
+function rebuildBsel(){
+  const sel=document.getElementById('bsel');sel.innerHTML='';
+  batches.forEach((b,i)=>{const o=document.createElement('option');o.value=i;const tl=b.data.type==='cooked'?'熟':'生';o.textContent='批次'+(i+1)+'['+tl+']'+(b.data.brand?' — '+b.data.brand:'');sel.appendChild(o);});
+  sel.value=cur;
+  document.getElementById('blabel').textContent='批次 '+(cur+1)+' / 共 '+batches.length+' 批';
+}
+function switchBatch(id){cur=parseInt(id);curTab=0;rebuildBsel();renderAll();}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function getCkList(dd,keys){
+  const m={label_content:'內容正確',label_format:'格式正確',label_fontsize:'字體大小',label_law:'符合法規',color_blue:'藍',color_green:'翠綠',color_brown:'咖啡',color_yellow:'黃',smell_none:'無味道',smell_sea:'海味',smell_fishy:'腥味',smell_ink:'油墨味',defect_frostbite:'凍傷',defect_blackhead:'黑頭',defect_redhead:'紅頭',defect_blackleg:'黑腳',defect_wsd:'白斑病',th_color_blue:'藍',th_color_green:'翠綠',th_color_brown:'咖啡',th_color_yellow:'黃',th_smell_none:'無味道',th_smell_sea:'海味',th_smell_fishy:'腥味',th_smell_ink:'油墨味',th_defect_frostbite:'凍傷',th_defect_blackhead:'黑頭',th_defect_redhead:'紅頭',th_defect_blackleg:'黑腳',th_defect_wsd:'白斑病',vein_shrimp:'蝦腸',vein_sand:'沙腸'};
+  return keys.filter(k=>dd[k]).map(k=>m[k]||k).join('、')||'無';
+}
+
+// ─── PROGRESS ──────────────────────────────────────────────────────────────
+function setProg(pct,txt){
+  const pw=document.getElementById('prog');pw.style.display='block';
+  document.getElementById('pbar').style.width=pct+'%';
+  document.getElementById('ptxt').textContent=txt;
+}
+
+// ─── IMAGE PROCESSING (robust, with timeout) ───────────────────────────────
+// Convert dataURL → Uint8Array SYNCHRONOUSLY (no async)
+function dataURLtoU8(dataURL){
+  try{
+    const b64=dataURL.split(',')[1];
+    if(!b64)return null;
+    const bin=atob(b64);
+    const u8=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+    return u8;
+  }catch(e){return null;}
+}
+
+// Resize a dataURL → smaller jpeg dataURL, with timeout
+// Returns Promise<string|null>  null = skip this image
+function shrinkImg(src, maxPx, quality, timeoutMs){
+  if(!src||!src.startsWith('data:'))return Promise.resolve(null);
+  return new Promise(resolve=>{
+    const timer=setTimeout(()=>resolve(null),timeoutMs||4000);
+    const img=new Image();
+    img.onload=()=>{
+      clearTimeout(timer);
+      try{
+        let w=img.width,h=img.height;
+        if(!w||!h){resolve(null);return;}
+        if(w>maxPx||h>maxPx){if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}else{w=Math.round(w*maxPx/h);h=maxPx;}}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        const out=cv.toDataURL('image/jpeg',quality||0.70);
+        resolve(out.length>100?out:null);
+      }catch(e){resolve(null);}
+    };
+    img.onerror=()=>{clearTimeout(timer);resolve(null);};
+    img.src=src;
+  });
+}
+
+// ─── EXCEL EXPORT ──────────────────────────────────────────────────────────
+async function doExport(withPhotos){
+  // Disable buttons to prevent double-click
+  document.querySelectorAll('.xbtn').forEach(b=>b.disabled=true);
+  document.getElementById('prog').style.display='block';
+  setProg(2,'初始化 Excel...');
+  await new Promise(r=>setTimeout(r,50));// yield to UI
+
+  try{
+    const wb=new ExcelJS.Workbook();
+    wb.creator='白蝦驗貨';wb.created=new Date();
+
+    // ── style constants ──
+    const C={
+      BLU:'FF185FA5',BLU2:'FFD6E4F7',GRY:'FFF0EDE8',WHT:'FFFFFFFF',
+      GRN:'FF3B6D11',GRN2:'FFEAF3DE',RED:'FFA32D2D',RED2:'FFFCEBEB',AMB:'FF854F0B'
+    };
+    function fill(c){return{type:'pattern',pattern:'solid',fgColor:{argb:c}};}
+    function bdr(c='FFB8B4AC'){const s={style:'thin',color:{argb:c}};return{top:s,bottom:s,left:s,right:s};}
+    function applyHdr(cell,val,bg,fg){
+      cell.value=val;cell.fill=fill(bg);
+      cell.font={bold:true,size:10,color:{argb:fg||'FF000000'}};
+      cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      cell.border=bdr();
+    }
+    function applyData(cell,val){
+      cell.value=(val===undefined||val===null)?'':val;
+      cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+      cell.border=bdr();
+    }
+
+    let progStep=0;
+    const totalBatches=batches.length;
+    const stepsPerBatch=withPhotos?7:2;
+    const totalSteps=totalBatches*stepsPerBatch;
+    function tick(msg){progStep++;setProg(Math.min(92,Math.round(progStep/totalSteps*88)+4),msg);}
+
+    for(let bi=0;bi<totalBatches;bi++){
+      const dd=batches[bi].data;
+      const c=dd.type==='cooked';
+      const bName='B'+(bi+1)+(dd.brand?'_'+dd.brand.slice(0,8):'');
+
+      tick('批次'+(bi+1)+' 建立資料表...');
+      await new Promise(r=>setTimeout(r,10));
+
+      // ── computed values ──
+      const wi=parseFloat(dd.w_withice)||0,net=parseFloat(dd.w_net)||0,lab=parseFloat(dd.w_labeled)||0;
+      const icew=wi>0&&net>0?(wi-net).toFixed(1):'';
+      const icePct=wi>0&&net>0?((wi-net)/wi*100).toFixed(1)+'%':'';
+      const netRate=lab>0&&net>0?(net/lab*100).toFixed(1)+'%':'';
+      const bs=(dd.ratio_big||[]).reduce((a,b)=>a+(parseFloat(b)||0),0);
+      const ss2=(dd.ratio_small||[]).reduce((a,b)=>a+(parseFloat(b)||0),0);
+      const ratio=ss2>0?(bs/ss2).toFixed(2):'';
+
+      // ── column groups definition ──
+      const tasteLabel=c?'試吃':'水煮試吃';
+      const frozenColorCols=c
+        ?[['冷凍色度(20-34)',dd.frozen_color_val||27],['色度說明',dd.frozen_color_note||'']]
+        :[['顏色',getCkList(dd,['color_blue','color_green','color_brown','color_yellow'])],['主色說明',dd.frozen_color_note||'']];
+      const thawedColorCols=c
+        ?[['解凍色度(20-34)',dd.thawed_color_val||27],['色度說明',dd.thawed_color_note||'']]
+        :[['顏色',getCkList(dd,['th_color_blue','th_color_green','th_color_brown','th_color_yellow'])],['主色說明',dd.thawed_color_note||'']];
+      const cookedColorCols=c?[]:[['水煮色度(20-34)',dd.cooked_color_val||27],['色度說明',dd.cooked_color_note||'']];
+
+      const groups=[
+        ['白蝦檢驗報告',[
+          ['批次',bi+1],['蝦種',c?'熟白蝦':'生白蝦'],['品牌',dd.brand],['採購單號',dd.po],
+          ['規格',dd.spec],['檢驗日期',dd.date],['驗貨人員',dd.inspector],['驗貨結果',dd.result],
+        ]],
+        ['包材確認',[
+          ['材質',dd.pkg_material],['印刷',dd.pkg_print],['顏色一致性',dd.pkg_color],['防水層',dd.pkg_waterproof],
+          ['標籤確認',getCkList(dd,['label_content','label_format','label_fontsize','label_law'])],
+          ['標籤備註',dd.label_note||''],
+        ]],
+        ['冷凍狀態觀測',[
+          ['包冰狀態',dd.ice],['冷凍大小',dd.frozen_size],
+          ...frozenColorCols,
+          ['氣味',getCkList(dd,['smell_none','smell_sea','smell_fishy','smell_ink'])],
+          ['異常狀況',getCkList(dd,['defect_frostbite','defect_blackhead','defect_redhead','defect_blackleg','defect_wsd'])],
+          ['冷凍備註',dd.frozen_note||''],
+        ]],
+        ['測重(g)',[
+          ['毛重(含包材)',parseFloat(dd.w_gross)||''],['含冰重(去包材)',wi||''],
+          ['包材重',parseFloat(dd.w_pkg)||''],['淨重(解凍後)',net||''],
+          ['標示淨重',lab||''],['冰衣重量',icew],['冰衣比例',icePct],['淨重達成率',netRate],
+        ]],
+        ['解凍後觀測',[
+          ...thawedColorCols,
+          ['氣味',getCkList(dd,['th_smell_none','th_smell_sea','th_smell_fishy','th_smell_ink'])],
+          ['異常狀況',getCkList(dd,['th_defect_frostbite','th_defect_blackhead','th_defect_redhead','th_defect_blackleg','th_defect_wsd'])],
+          ['排列方式',dd.arrange||''],['解凍備註',dd.thawed_note||''],
+        ]],
+        ['參差比',[
+          ['測量組合',dd.ratio_group],
+          ['大規格重量',(dd.ratio_big||[]).filter(Boolean).join('、')||''],
+          ['小規格重量',(dd.ratio_small||[]).filter(Boolean).join('、')||''],
+          ['大規格總和',bs>0?bs.toFixed(1)+'g':''],['小規格總和',ss2>0?ss2.toFixed(1)+'g':''],
+          ['參差比',ratio],['合格標準','≤1.2'],['判定',ratio?(parseFloat(ratio)<=1.2?'合格':'不合格'):''],
+        ]],
+        [tasteLabel,[
+          ...cookedColorCols,
+          ['試吃氣味',dd.taste_smell],['甜度(1-5)',dd.taste_sweet||3],
+          ['蝦味道(1-5)',dd.taste_shrimp_flavor||3],['咬感(1-5)',dd.taste_texture_score||3],
+          ['腸種類',getCkList(dd,['vein_shrimp','vein_sand'])],['腸嚴重度',dd.vein_level||'無'],
+          ['試吃備註',dd.taste_note||''],
+        ]],
+        ['整體',[
+          ['驗貨結果',dd.result],['整體備註',dd.remark||''],
+          ['匯出時間',new Date().toLocaleString('zh-TW')],
+        ]],
+      ];
+
+      // flatten to columns
+      const hdr1=[],hdr2=[],dataRow=[];
+      const merges=[];
+      let col=1;
+      for(const[gName,fields] of groups){
+        const start=col;
+        for(const[fName,fVal] of fields){hdr1.push(gName);hdr2.push(fName);dataRow.push(fVal);col++;}
+        if(col-1>start)merges.push({s:start,e:col-1});
+      }
+
+      const ws=wb.addWorksheet(bName+'_資料',{views:[{showGridLines:true}]});
+      ws.properties.defaultRowHeight=22;
+      // set column widths
+      hdr2.forEach((_,i)=>ws.getColumn(i+1).width=15);
+
+      // Row 1: group headers
+      const r1=ws.addRow(hdr1);r1.height=28;
+      hdr1.forEach((_,i)=>{applyHdr(r1.getCell(i+1),hdr1[i],C.BLU,C.WHT);});
+      merges.forEach(({s,e})=>{try{ws.mergeCells(1,s,1,e);}catch(err){}});
+
+      // Row 2: field names
+      const r2=ws.addRow(hdr2);r2.height=22;
+      hdr2.forEach((_,i)=>{applyHdr(r2.getCell(i+1),hdr2[i],C.GRY,'FF333333');});
+
+      // Row 3: data
+      const r3=ws.addRow(dataRow);r3.height=22;
+      dataRow.forEach((_,i)=>{applyData(r3.getCell(i+1),dataRow[i]);});
+
+      // Highlight special cells
+      const ridx=hdr2.indexOf('驗貨結果');
+      if(ridx>=0){const rv=dataRow[ridx];const bg=rv==='合格'?C.GRN:rv==='不合格'?C.RED:'FFBF8600';r3.getCell(ridx+1).fill=fill(bg);r3.getCell(ridx+1).font={bold:true,color:{argb:C.WHT},size:10};}
+      const jidx=hdr2.lastIndexOf('判定');
+      if(jidx>=0&&dataRow[jidx]){const bg=dataRow[jidx]==='合格'?C.GRN:C.RED;r3.getCell(jidx+1).fill=fill(bg);r3.getCell(jidx+1).font={bold:true,color:{argb:C.WHT},size:10};}
+
+      if(!withPhotos){tick('批次'+(bi+1)+' 完成');continue;}
+
+      // ── PHOTO SHEETS ──
+      const photoCats=c
+        ?[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','試吃後']]
+        :[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
+
+      for(const[catKey,catLabel] of photoCats){
+        tick('批次'+(bi+1)+' 照片：'+catLabel);
+        const shName=(bName+'_'+catLabel).slice(0,31);
+        const pws=wb.addWorksheet(shName,{views:[{showGridLines:false}]});
+
+        // columns: padding | img1 | gap | img2
+        pws.getColumn(1).width=2;
+        pws.getColumn(2).width=34;
+        pws.getColumn(3).width=2;
+        pws.getColumn(4).width=34;
+
+        // title row
+        const titleRow=pws.addRow(['',bName+' — '+catLabel]);
+        titleRow.height=24;titleRow.getCell(2).fill=fill(C.BLU2);
+        titleRow.getCell(2).font={bold:true,size:12};
+        try{pws.mergeCells(1,2,1,4);}catch(e){}
+        pws.addRow([]).height=6;// small gap
+
+        const photos=(dd.photos||{})[catKey]||[];
+        const validPhotos=photos.filter(Boolean);
+
+        if(validPhotos.length===0){
+          const nr=pws.addRow(['','（本步驟未上傳照片）']);
+          nr.getCell(2).font={italic:true,color:{argb:'FF888888'}};
+        } else {
+          // Pre-process ALL images first (synchronously resolve all promises),
+          // then write to Excel — avoids interleaved async/ExcelJS state issues
+          const processed=[];
+          for(let pi=0;pi<validPhotos.length;pi++){
+            setProg(document.getElementById('pbar').style.width.replace('%',''),'處理照片 '+(pi+1)+'/'+validPhotos.length+'...');
+            // shrink to 500px max, jpeg 0.68, 5s timeout
+            const shrunk=await shrinkImg(validPhotos[pi],500,0.68,5000);
+            processed.push(shrunk);
+            await new Promise(r=>setTimeout(r,0));// yield
+          }
+
+          // Now write images to Excel
+          const ROW_H=145;// row height in pts ≈ 200px
+          let rowIdx=3;// current data row (1-based)
+
+          for(let pi=0;pi<processed.length;pi+=2){
+            const leftSrc=processed[pi];
+            const rightSrc=processed[pi+1]!==undefined?processed[pi+1]:null;
+
+            // label row
+            const lr=pws.addRow(['','照片 '+(pi+1)+(rightSrc!==null?'':''),'','照片 '+(rightSrc!==null?pi+2:'')]);
+            lr.height=14;lr.getCell(2).font={size:9,color:{argb:'FF666666'}};
+            if(rightSrc!==null)lr.getCell(4).font={size:9,color:{argb:'FF666666'}};
+            rowIdx++;
+
+            // image row
+            pws.getRow(rowIdx).height=ROW_H;
+
+            if(leftSrc){
+              try{
+                const u8=dataURLtoU8(leftSrc);
+                if(u8){
+                  const imgId=wb.addImage({buffer:u8.buffer,extension:'jpeg'});
+                  pws.addImage(imgId,{
+                    tl:{col:1,row:rowIdx-1},
+                    br:{col:2,row:rowIdx},
+                    editAs:'oneCell'
+                  });
+                }
+              }catch(e){/* skip broken image */}
+            }
+
+            if(rightSrc){
+              try{
+                const u8=dataURLtoU8(rightSrc);
+                if(u8){
+                  const imgId=wb.addImage({buffer:u8.buffer,extension:'jpeg'});
+                  pws.addImage(imgId,{
+                    tl:{col:3,row:rowIdx-1},
+                    br:{col:4,row:rowIdx},
+                    editAs:'oneCell'
+                  });
+                }
+              }catch(e){/* skip broken image */}
+            }
+
+            pws.addRow([]).height=8;// gap
+            rowIdx+=2;
+          }
+        }
+        await new Promise(r=>setTimeout(r,0));// yield after each sheet
+      }
+      tick('批次'+(bi+1)+' 完成');
+    }// end batches loop
+
+    setProg(95,'產生檔案中，請稍候...');
+    await new Promise(r=>setTimeout(r,100));
+
+    const buf=await wb.xlsx.writeBuffer();
+    setProg(99,'下載...');
+
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;
+    a.download='白蝦驗貨_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+
+    setProg(100,'✅ 匯出完成！');
+    setTimeout(()=>{
+      closeModal();
+      document.getElementById('prog').style.display='none';
+      document.getElementById('pbar').style.width='0%';
+    },2000);
+
+  }catch(err){
+    console.error('Export error:',err);
+    setProg(0,'❌ 匯出失敗：'+err.message);
+  }finally{
+    document.querySelectorAll('.xbtn').forEach(b=>b.disabled=false);
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+(function init(){
+  batches=[{id:0,data:mkData()}];
+  if(!tryLoadSaved()){rebuildBsel();renderAll();}
+  else{rebuildBsel();renderAll();}
+})();
+</script>
+</body>
+</html>
