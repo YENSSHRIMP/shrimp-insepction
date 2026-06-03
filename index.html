@@ -308,7 +308,7 @@ function secTaste(c){
   return`${hd}${cc}<div class="card"><div class="ctitle">試吃評分</div><div class="field"><label class="lbl">氣味</label><div class="rg" id="rgtastesmell"><div class="rb" onclick="sr('taste_smell','正常',this)">正常</div><div class="rb" onclick="sr('taste_smell','輕微腥',this)">輕微腥</div><div class="rb" onclick="sr('taste_smell','腥味重',this)">腥味重</div><div class="rb" onclick="sr('taste_smell','油墨味',this)">油墨味</div></div></div><div class="field"><label class="lbl">甜度（1–5）</label><div class="srow"><span style="font-size:12px;color:var(--muted)">1</span><input type="range" min="1" max="5" value="3" id="rsweet" oninput="document.getElementById('rvsweet').textContent=this.value;sf('taste_sweet',+this.value)"><span class="sval" id="rvsweet">3</span></div><div class="slabs"><span>不甜</span><span>普通</span><span>很甜</span></div></div><div class="field"><label class="lbl">蝦味道（1–5）</label><div class="srow"><span style="font-size:12px;color:var(--muted)">1</span><input type="range" min="1" max="5" value="3" id="rshflav" oninput="document.getElementById('rvshflav').textContent=this.value;sf('taste_shrimp_flavor',+this.value)"><span class="sval" id="rvshflav">3</span></div><div class="slabs"><span>味道淡</span><span>普通</span><span>風味濃</span></div></div><div class="field"><label class="lbl">咬感（1–5）</label><div class="srow"><span style="font-size:12px;color:var(--muted)">1</span><input type="range" min="1" max="5" value="3" id="rtex" oninput="document.getElementById('rvtex').textContent=this.value;sf('taste_texture_score',+this.value)"><span class="sval" id="rvtex">3</span></div><div class="slabs"><span>偏軟</span><span>普通</span><span>Q彈</span></div></div><div class="field"><label class="lbl">蝦腸 / 沙腸</label><div class="cg" style="margin-bottom:8px"><label class="ci" onclick="tc(this,'vein_shrimp')"><input type="checkbox">蝦腸</label><label class="ci" onclick="tc(this,'vein_sand')"><input type="checkbox">沙腸</label></div><div class="rg" id="rgveinlvl"><div class="rb" onclick="sr('vein_level','無',this)">無</div><div class="rb" onclick="sr('vein_level','輕微',this)">輕微</div><div class="rb" onclick="sr('vein_level','明顯',this)">明顯</div></div></div><div class="field"><label class="lbl">試吃備註</label><textarea id="ftastenote" placeholder="口感描述..." oninput="sf('taste_note',this.value)"></textarea></div></div>`;}
 
 function secPhotos(c){
-  const cats=c?[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','試吃後']]:[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
+  const cats=c?[['pkg','包材盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','試吃後']]:[['pkg','包材盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
   return cats.map(([id,lbl],i)=>`<div class="card"><div class="sh"><div class="shb">${i+1}</div><div class="sht">${lbl}</div><div class="pcount" id="pc${id}">0張</div></div><div class="pgrid" id="ph${id}"></div></div>`).join('');
 }
 
@@ -632,8 +632,8 @@ async function doExport(withPhotos){
 
       // ── PHOTO SHEETS ──
       const photoCats=c
-        ?[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','試吃後']]
-        :[['pkg','包材/盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
+        ?[['pkg','包材盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','試吃後']]
+        :[['pkg','包材盒子外觀'],['frozen','冷凍狀態白蝦'],['weight','測重畫面'],['thawed','解凍後白蝦'],['cooked','水煮後']];
 
       for(const[catKey,catLabel] of photoCats){
         tick('批次'+(bi+1)+' 照片：'+catLabel);
