@@ -216,7 +216,6 @@ function sf(k,v){d()[k]=v;dirty();}
 function dirty(){
   document.getElementById('spill').className='spill dirty';
   document.getElementById('stxt').textContent='未儲存';
-  clearTimeout(saveTimer);saveTimer=setTimeout(save,1800);
 }
 function save(){
   try{
